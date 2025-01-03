@@ -5,7 +5,7 @@ LINKER = ld
 
 # Flags
 NASMFLAGS = -f elf32
-CFLAGS = -m32 -ffreestanding -fno-pic -std=gnu99 -fno-builtin -fno-exceptions -fno-stack-protector -nostdlib -nodefaultlibs -Wall -Wextra
+CFLAGS = -m32 -ffreestanding -fno-builtin -fno-exceptions -fno-stack-protector -nostdlib -nodefaultlibs -Wall -Wextra
 LINKERFLAGS = -m elf_i386 
 
 # Target definitions
@@ -13,7 +13,13 @@ TARGET_BIN = kernel.bin
 LINKER_SCRIPT = link.ld
 OBJECTS = boot.o kernel.o
 
-all: $(TARGET_BIN)
+# Variables for the disk image
+IMG = boot.img
+IMG_SIZE_MB = 10
+MOUNT_POINT = mnt
+
+.PHONY: all
+all: run
 
 %.o: %.asm
 	$(NASMC) $< -o $@ $(NASMFLAGS)
@@ -27,34 +33,26 @@ $(TARGET_BIN): $(OBJECTS)
 # Check binary as multiboot
 	grub-file --is-x86-multiboot $(TARGET_BIN)
 
-
-
-# Variables
-IMG = boot.img
-IMG_SIZE_MB = 10
-MOUNT_POINT = mnt
-
-
 # Target: Create and partition the image
-$(IMG): 
+$(IMG): $(TARGET_BIN)
 	@echo "Creating a $(IMG_SIZE_MB)MB image..."
-	dd if=/dev/zero of=$(IMG) bs=1M count=$(IMG_SIZE_MB)
+	@dd if=/dev/zero of=$(IMG) bs=1M count=$(IMG_SIZE_MB)
 	@echo "Partitioning the image with fdisk..."
-	printf "o\nn\np\n1\n\n\nt\n83\na\nw\n" | fdisk $(IMG)
+	@printf "o\nn\np\n1\n\n\nt\n83\na\nw\n" | fdisk $(IMG)
 	@echo "Image created and partitioned successfully."
 
 # Target: Attach loop device
 .PHONY: attach
 attach: $(IMG)
 	@echo "Attaching loop device..." 
-	sudo losetup -Pf --show $(IMG)
+	@sudo losetup -Pf --show $(IMG)
 
 # Target: Create filesystem
 .PHONY: format
 format: attach
 	@echo "Formatting partition as ext2..."
-	sudo mkfs.ext2 -b 1024 /dev/loop0p1
-	sudo tune2fs -m 0 /dev/loop0p1
+	@sudo mkfs.ext2 -b 1024 /dev/loop0p1
+	@sudo tune2fs -m 0 /dev/loop0p1
 	@echo "Filesystem created successfully."
 
 # Target: Mount the partition
@@ -66,45 +64,41 @@ mount: format
 	@echo "Partition mounted at $(MOUNT_POINT)."
 
 # Target: Install grub in minimum config and remove fonts and themes to fit in 10M image
+.PHONY: grub
 grub: mount
-	sudo grub-install --target=i386-pc --boot-directory=mnt/boot \
+	@echo "Installing GRUB to $(IMG)..."
+	@sudo grub-install --target=i386-pc --boot-directory=mnt/boot \
 		--install-modules="normal linux ext2 part_msdos biosdisk multiboot configfile" \
 		--locales="" --no-floppy /dev/loop0
-	sudo rm -rf mnt/boot/grub/themes
-	sudo rm -f mnt/boot/grub/fonts/*.pf2
-
-	#sudo grub-install --target=i386-pc --boot-directory=mnt/boot /dev/loop0
-
+	@sudo rm -rf mnt/boot/grub/themes
+	@sudo rm -f mnt/boot/grub/fonts/*.pf2
 
 # Copy grub.cfg and kernel.bin to the img file
+.PHONY: copy
 copy: grub
-	sudo cp grub.cfg mnt/boot/grub/
-	sudo cp kernel.bin mnt/boot/
+	@echo "Copying files to $(IMG)..."
+	@sudo cp grub.cfg mnt/boot/grub/
+	@sudo cp kernel.bin mnt/boot/
 
+# Run KVM with the disk image
+.PHONY: run
 run: copy
+	@echo "Running KVM..."
 	@sudo umount $(MOUNT_POINT) || true
-	qemu-system-i386 -hda boot.img
+	@qemu-system-i386 -hda boot.img 2>/dev/null
 
 
 # Target: Clean up
 .PHONY: clean
 clean:
 	@echo "Cleaning up..."
-	#@sudo umount $(MOUNT_POINT) || true
 	@sudo losetup -d /dev/loop0 || true
-	@sudo rm -f $(IMG)
 	@rm -rf $(MOUNT_POINT)
-	@rm -f $(OBJECTS) $(TARGET_BIN)
+	@rm -f $(OBJECTS) $(TARGET_BIN) $(IMG)
 	@echo "Clean-up complete."
 
-# # Combine tasks: Create, format, and mount
-# .PHONY: all
-# all: mount
-# 	@echo "Image creation, partitioning, formatting, and mounting completed successfully."
 
-
-
-# Create .iso image
+# Create .iso image (simple test, more than 10M image)
 iso: $(TARGET_BIN)
 	@mkdir -p iso/boot/grub
 	@cp kernel.bin iso/boot/kernel.bin
@@ -112,9 +106,9 @@ iso: $(TARGET_BIN)
 	@grub-mkrescue -o kfs.iso iso
 	@qemu-system-i386 -cdrom kfs.iso
 
-
-# clean:
-# 	rm -f $(OBJECTS) $(TARGET_BIN)
-# 	rm -rf iso
-# 	rm kfs.iso
+# Clean for .iso version
+iso-clean:
+	rm -f $(OBJECTS) $(TARGET_BIN)
+	rm -rf iso
+	rm kfs.iso
 
