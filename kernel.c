@@ -48,9 +48,10 @@ unsigned char get_scancode() {
 //     return status & 0x02;  // If bit 0x02 is set, Shift is pressed
 // }
 
-// Variables to track the Shift state
+// Variables to track the Shift and Caps Lock state
 unsigned char left_shift_pressed = 0;
 unsigned char right_shift_pressed = 0;
+unsigned char caps_lock_on = 0;
 
 // Function to handle the Shift key presses and releases
 void handle_shift_key(unsigned char scancode) {
@@ -73,10 +74,33 @@ void handle_shift_key(unsigned char scancode) {
 unsigned char is_shift_pressed() {
     return left_shift_pressed || right_shift_pressed;
 }
-// Check if Caps Lock is enabled
-unsigned char is_caps_lock_enabled() {
-    unsigned char status = inb(KEYBOARD_STATUS_PORT);
-    return status & 0x04;  // If bit 0x04 is set, Caps Lock is enabled
+
+// Function to handle the Caps Lock key presses and releases
+void handle_caps_lock_key(unsigned char scancode) {
+    // Check if the scancode corresponds to the Caps Lock key (0x3A for press, 0xBA for release)
+    if (scancode == 0x3A) { // Caps Lock pressed
+        caps_lock_on = !caps_lock_on; // Toggle the Caps Lock state
+    }
+}
+
+// Function to determine if the letter should be uppercase or lowercase
+unsigned char handle_case(unsigned char character) {
+    // If Caps Lock is on, the case is inverted (uppercase), unless Shift is also pressed
+    if (caps_lock_on && !is_shift_pressed()) {
+        if (character >= 'a' && character <= 'z') {
+            character = character - 'a' + 'A'; // Convert to uppercase
+        }
+    } else if (is_shift_pressed() && !(caps_lock_on)) {
+        if (character >= 'a' && character <= 'z') {
+            character = character - 'a' + 'A'; // Convert to uppercase
+        }
+    } else {
+        // If neither Caps Lock nor Shift is pressed, make it lowercase
+        if (character >= 'A' && character <= 'Z') {
+            character = character - 'A' + 'a'; // Convert to lowercase
+        }
+    }
+    return character;
 }
 
 // Function to print a character on the screen
@@ -157,17 +181,16 @@ void kernel_main() {
 
         // Handle the Shift key state
         handle_shift_key(scancode);
+        // Handle the Caps Lock key state
+        handle_caps_lock_key(scancode);
+
+
         // Convert scancode to ASCII (basic example)
         char character = 0;
 
         // For now, just check for a few basic keys
         if (scancode == 0x1E) { // 'a' key
-            // If Shift is pressed or Caps Lock is on, print uppercase 'A'
-            if (is_shift_pressed()) {
-                character = 'A';
-            } else {
-                character = 'a';
-            }
+            character = 'a';
         } else if (scancode == 0x30) { // 'b' key
             character = 'b';
         } else if (scancode == 0x1C) { // Enter key
@@ -176,6 +199,7 @@ void kernel_main() {
 
         // If a valid character is found, print it in light grey color
         if (character != 0) {
+            character = handle_case(character); // Apply Caps Lock and Shift logic
             write_char(character, input_color); // Print input in light grey
         }
     }
