@@ -65,7 +65,7 @@ mount: format
 	@sudo mount /dev/loop0p1 $(MOUNT_POINT)
 	@echo "Partition mounted at $(MOUNT_POINT)."
 
-# Install grub in minimum config and remove fonts and themes to fit in 10M image
+# Target: Install grub in minimum config and remove fonts and themes to fit in 10M image
 grub: mount
 	sudo grub-install --target=i386-pc --boot-directory=mnt/boot \
 		--install-modules="normal linux ext2 part_msdos biosdisk multiboot configfile" \
@@ -90,10 +90,11 @@ run: copy
 .PHONY: clean
 clean:
 	@echo "Cleaning up..."
-	@sudo umount $(MOUNT_POINT) || true
-	sudo losetup -d /dev/loop0 || true
+	#@sudo umount $(MOUNT_POINT) || true
+	@sudo losetup -d /dev/loop0 || true
 	@sudo rm -f $(IMG)
 	@rm -rf $(MOUNT_POINT)
+	@rm -f $(OBJECTS) $(TARGET_BIN)
 	@echo "Clean-up complete."
 
 # # Combine tasks: Create, format, and mount
