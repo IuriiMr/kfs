@@ -1,16 +1,12 @@
-OUTPUT_FORMAT("binary")
+OUTPUT_FORMAT(elf32-i386)
 ENTRY(_start)
 
 SECTIONS {
     . = 0x100000;  /* The starting address for the kernel */
 
-    .text : {
+    .text BLOCK(4K) : ALIGN(4K) {
         *(.multiboot)  /* Include the Multiboot header */
         *(.text)       /* Include the text section (kernel code) */
-    }
-
-    .rodata : {
-        *(.rodata)     /* Read-only data section */
     }
 
     .data : {
@@ -20,8 +16,5 @@ SECTIONS {
     .bss : {
         *(.bss)         /* Uninitialized data (bss) */
     }
-
-    /* Memory configuration for stack, etc. */
-    . = 0x200000;
 }
 
