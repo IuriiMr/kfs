@@ -41,6 +41,44 @@ unsigned char get_scancode() {
     return inb(KEYBOARD_DATA_PORT); // Return the scan code
 }
 
+
+// // Check if Shift is pressed
+// unsigned char is_shift_pressed() {
+//     unsigned char status = inb(KEYBOARD_STATUS_PORT);
+//     return status & 0x02;  // If bit 0x02 is set, Shift is pressed
+// }
+
+// Variables to track the Shift state
+unsigned char left_shift_pressed = 0;
+unsigned char right_shift_pressed = 0;
+
+// Function to handle the Shift key presses and releases
+void handle_shift_key(unsigned char scancode) {
+    // Check if the scancode corresponds to the left shift key (0x2A for press, 0xAA for release)
+    if (scancode == 0x2A) { // Left shift pressed
+        left_shift_pressed = 1;
+    } else if (scancode == 0xAA) { // Left shift released
+        left_shift_pressed = 0;
+    }
+
+    // Check if the scancode corresponds to the right shift key (0x36 for press, 0xB6 for release)
+    if (scancode == 0x36) { // Right shift pressed
+        right_shift_pressed = 1;
+    } else if (scancode == 0xB6) { // Right shift released
+        right_shift_pressed = 0;
+    }
+}
+
+// Function to check if Shift is pressed
+unsigned char is_shift_pressed() {
+    return left_shift_pressed || right_shift_pressed;
+}
+// Check if Caps Lock is enabled
+unsigned char is_caps_lock_enabled() {
+    unsigned char status = inb(KEYBOARD_STATUS_PORT);
+    return status & 0x04;  // If bit 0x04 is set, Caps Lock is enabled
+}
+
 // Function to print a character on the screen
 void write_char(char character, int color) {
     unsigned short *video_memory = (unsigned short *)VIDEO_MEMORY;
@@ -81,13 +119,13 @@ void write_char(char character, int color) {
     move_cursor(cursor_y, cursor_x);
 }
 
-// Function to print a string
-void print_string(const char *message, int color) {
-    while (*message != '\0') {
-        write_char(*message, color);
-        message++;
-    }
-}
+// // Function to print a string
+// void print_string(const char *message, int color) {
+//     while (*message != '\0') {
+//         write_char(*message, color);
+//         message++;
+//     }
+// }
 
 
 void kernel_main() {
@@ -117,12 +155,19 @@ void kernel_main() {
     while (1) {
         unsigned char scancode = get_scancode(); // This is a placeholder for your keyboard input logic
 
+        // Handle the Shift key state
+        handle_shift_key(scancode);
         // Convert scancode to ASCII (basic example)
         char character = 0;
 
         // For now, just check for a few basic keys
         if (scancode == 0x1E) { // 'a' key
-            character = 'a';
+            // If Shift is pressed or Caps Lock is on, print uppercase 'A'
+            if (is_shift_pressed()) {
+                character = 'A';
+            } else {
+                character = 'a';
+            }
         } else if (scancode == 0x30) { // 'b' key
             character = 'b';
         } else if (scancode == 0x1C) { // Enter key
