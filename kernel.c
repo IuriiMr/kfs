@@ -91,7 +91,15 @@ void print_string(const char *message, int color) {
 
 
 void kernel_main() {
-    const char *welcome_message = "Hello, World from the Kernel!";
+    const char *welcome_message = 
+    "   ___  _____  ______          _     \n"
+    "  /   |/ __  \\ | ___ \\        (_)    \n"
+    " / /| |`' / /' | |_/ /_ _ _ __ _ ___ \n"
+    "/ /_| |  / /   |  __/ _` | '__| / __|\n"
+    "\\___  |./ /___ | | | (_| | |  | \\__ \\\n"
+    "    |_/\\_____/ \\_|  \\__,_|_|  |_|___/ \n"
+    "                                      \n";
+    
     int greeting_color = 0x02; // Green text on black background
     int input_color = 0x07; // Light grey text on black background
 
