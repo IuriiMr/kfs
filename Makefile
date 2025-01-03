@@ -99,6 +99,7 @@ clean:
 
 
 # Create .iso image (simple test, more than 10M image)
+.PHONY: iso
 iso: $(TARGET_BIN)
 	@mkdir -p iso/boot/grub
 	@cp kernel.bin iso/boot/kernel.bin
@@ -107,6 +108,7 @@ iso: $(TARGET_BIN)
 	@qemu-system-i386 -cdrom kfs.iso
 
 # Clean for .iso version
+.PHONY: iso-clean
 iso-clean:
 	rm -f $(OBJECTS) $(TARGET_BIN)
 	rm -rf iso
