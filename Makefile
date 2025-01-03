@@ -15,7 +15,7 @@ OBJECTS = boot.o kernel.o
 
 # Variables for the disk image
 IMG = boot.img
-IMG_SIZE_MB = 10
+IMG_SIZE_MB = 9
 MOUNT_POINT = mnt
 
 .PHONY: all
