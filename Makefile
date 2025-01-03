@@ -31,7 +31,7 @@ $(TARGET_BIN): $(OBJECTS)
 
 # Variables
 IMG = boot.img
-IMG_SIZE_MB = 20
+IMG_SIZE_MB = 10
 MOUNT_POINT = mnt
 
 
@@ -65,9 +65,13 @@ mount: format
 	@sudo mount /dev/loop0p1 $(MOUNT_POINT)
 	@echo "Partition mounted at $(MOUNT_POINT)."
 
+# Install grub in minimum config and remove fonts and themes to fit in 10M image
 grub: mount
 	sudo grub-install --target=i386-pc --boot-directory=mnt/boot \
-  --modules="normal part_msdos ext2 multiboot" --no-floppy /dev/loop0
+		--install-modules="normal linux ext2 part_msdos biosdisk multiboot configfile" \
+		--locales="" --no-floppy /dev/loop0
+	sudo rm -rf mnt/boot/grub/themes
+	sudo rm -f mnt/boot/grub/fonts/*.pf2
 
 	#sudo grub-install --target=i386-pc --boot-directory=mnt/boot /dev/loop0
 
@@ -86,7 +90,7 @@ run: copy
 .PHONY: clean
 clean:
 	@echo "Cleaning up..."
-	#@sudo umount $(MOUNT_POINT) || true
+	@sudo umount $(MOUNT_POINT) || true
 	sudo losetup -d /dev/loop0 || true
 	@sudo rm -f $(IMG)
 	@rm -rf $(MOUNT_POINT)
