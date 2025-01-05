@@ -11,7 +11,10 @@ LINKERFLAGS = -m elf_i386
 # Target definitions
 TARGET_BIN = kernel.bin
 LINKER_SCRIPT = link.ld
-OBJECTS = boot.o kernel.o
+ASM = boot.asm
+SOURCES = kernel.c utils.c
+OBJECTS = $(SOURCES:.c=.o) $(ASM:.asm=.o)
+#OBJECTS = boot.o kernel.o
 
 # Variables for the disk image
 IMG = boot.img

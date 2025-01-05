@@ -7,33 +7,35 @@
 #define KEYBOARD_STATUS_PORT 0x64
 #define KEYBOARD_CMD_PORT 0x64
 
+#include "utils.h"
+
 // Function to write a byte to a port
-void outb(unsigned short port, unsigned char value) {
+void outb(uint16_t port, uint8_t value) {
     __asm__ volatile("outb %0, %1" : : "a"(value), "Nd"(port));
 }
 
 // Function to read a byte from a port
-unsigned char inb(unsigned short port) {
-    unsigned char result;
+uint8_t inb(uint16_t port) {
+    uint8_t result;
     __asm__ volatile("inb %1, %0" : "=a"(result) : "Nd"(port));
     return result;
 }
 
 // Function to move the cursor
 void move_cursor(int row, int col) {
-    unsigned short position = row * SCREEN_WIDTH + col;
+    uint16_t position = row * SCREEN_WIDTH + col;
 
     // Set high byte
     outb(CURSOR_COMMAND_PORT, 0x0E);
-    outb(CURSOR_DATA_PORT, (unsigned char)(position >> 8));
+    outb(CURSOR_DATA_PORT, (uint8_t)(position >> 8));
 
     // Set low byte
     outb(CURSOR_COMMAND_PORT, 0x0F);
-    outb(CURSOR_DATA_PORT, (unsigned char)(position & 0xFF));
+    outb(CURSOR_DATA_PORT, (uint8_t)(position & 0xFF));
 }
 
 // Function to handle keyboard input
-unsigned char get_scancode() {
+uint8_t get_scancode() {
     // Wait for a byte to be available from the keyboard data port
     while ((inb(KEYBOARD_STATUS_PORT) & 0x01) == 0) {
         // Busy-wait until the data is available
@@ -42,19 +44,13 @@ unsigned char get_scancode() {
 }
 
 
-// // Check if Shift is pressed
-// unsigned char is_shift_pressed() {
-//     unsigned char status = inb(KEYBOARD_STATUS_PORT);
-//     return status & 0x02;  // If bit 0x02 is set, Shift is pressed
-// }
-
 // Variables to track the Shift and Caps Lock state
-unsigned char left_shift_pressed = 0;
-unsigned char right_shift_pressed = 0;
-unsigned char caps_lock_on = 0;
+uint8_t left_shift_pressed = 0;
+uint8_t right_shift_pressed = 0;
+uint8_t caps_lock_on = 0;
 
 // Function to handle the Shift key presses and releases
-void handle_shift_key(unsigned char scancode) {
+void handle_shift_key(uint8_t scancode) {
     // Check if the scancode corresponds to the left shift key (0x2A for press, 0xAA for release)
     if (scancode == 0x2A) { // Left shift pressed
         left_shift_pressed = 1;
@@ -71,12 +67,12 @@ void handle_shift_key(unsigned char scancode) {
 }
 
 // Function to check if Shift is pressed
-unsigned char is_shift_pressed() {
+uint8_t is_shift_pressed() {
     return left_shift_pressed || right_shift_pressed;
 }
 
 // Function to handle the Caps Lock key presses and releases
-void handle_caps_lock_key(unsigned char scancode) {
+void handle_caps_lock_key(uint8_t scancode) {
     // Check if the scancode corresponds to the Caps Lock key (0x3A for press, 0xBA for release)
     if (scancode == 0x3A) { // Caps Lock pressed
         caps_lock_on = !caps_lock_on; // Toggle the Caps Lock state
@@ -84,7 +80,7 @@ void handle_caps_lock_key(unsigned char scancode) {
 }
 
 // Function to determine if the letter should be uppercase or lowercase
-unsigned char handle_case(unsigned char character) {
+uint8_t handle_case(uint8_t character) {
     // If Caps Lock is on, the case is inverted (uppercase), unless Shift is also pressed
     if (caps_lock_on && !is_shift_pressed()) {
         if (character >= 'a' && character <= 'z') {
@@ -103,9 +99,10 @@ unsigned char handle_case(unsigned char character) {
     return character;
 }
 
+
 // Function to print a character on the screen
 void write_char(char character, int color) {
-    unsigned short *video_memory = (unsigned short *)VIDEO_MEMORY;
+    uint16_t *video_memory = (uint16_t *)VIDEO_MEMORY;
     static int cursor_x = 0;
     static int cursor_y = 0;
 
@@ -113,7 +110,7 @@ void write_char(char character, int color) {
         cursor_y++;
         cursor_x = 0;
     } else {
-        unsigned short *location = video_memory + (cursor_y * SCREEN_WIDTH + cursor_x);
+        uint16_t *location = video_memory + (cursor_y * SCREEN_WIDTH + cursor_x);
         *location = (color << 8) | character;
         cursor_x++;
     }
@@ -127,29 +124,30 @@ void write_char(char character, int color) {
     // If the cursor moves past the last line, scroll the screen
     if (cursor_y >= SCREEN_HEIGHT) {
         cursor_y = SCREEN_HEIGHT - 1; // Keep the cursor at the bottom
-        // Scroll screen up by one line
-        for (int i = 0; i < SCREEN_HEIGHT - 1; i++) {
-            for (int j = 0; j < SCREEN_WIDTH; j++) {
-                video_memory[i * SCREEN_WIDTH + j] = video_memory[(i + 1) * SCREEN_WIDTH + j];
-            }
-        }
+        
+        // Scroll the screen up by one line
+        memcpy(video_memory, 
+               video_memory + SCREEN_WIDTH, 
+               (SCREEN_HEIGHT - 1) * SCREEN_WIDTH * sizeof(uint16_t));
+
         // Clear the last line
-        for (int j = 0; j < SCREEN_WIDTH; j++) {
-            video_memory[(SCREEN_HEIGHT - 1) * SCREEN_WIDTH + j] = 0x0F00; // White background
-        }
+        memset(video_memory + (SCREEN_HEIGHT - 1) * SCREEN_WIDTH, 
+               0x0F00, 
+               SCREEN_WIDTH * sizeof(uint16_t)); // White background
     }
 
     // Move the cursor to the new position
     move_cursor(cursor_y, cursor_x);
 }
 
-// // Function to print a string
-// void print_string(const char *message, int color) {
-//     while (*message != '\0') {
-//         write_char(*message, color);
-//         message++;
-//     }
-// }
+
+// Function to print a string
+void print_string(const char *message, int color) {
+    while (*message != '\0') {
+        write_char(*message, color);
+        message++;
+    }
+}
 
 // Function to print out the greeting with 42
 void greeting() {
@@ -214,7 +212,6 @@ void kernel_main() {
     write_char('\n', 0);
 
     handle_keyboard_input();
-
 }
 
 

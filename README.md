@@ -32,6 +32,33 @@ This assembly file is the bootloader, which:
 ### 5. `grub.cfg`
 This configuration file is used by GRUB to boot the kernel. It specifies the timeout, default entry, and the path to the kernel binary.
 
+## **Helper Files**
+
+### **1. `types.h`**
+Defines custom data types for better portability and readability.
+
+- **Key Features:**
+  - Explicit integer sizes like `uint8_t`, `int32_t`.
+  - Boolean type `bool` with `true` and `false` values.
+  - Definition of `size_t` for memory-related operations.
+- **Read More:**
+  - [Fixed-Width Integer Types in C](https://en.wikipedia.org/wiki/C_data_types#Fixed-width_integer_types)
+
+---
+
+### **2. `utils.c`**
+Provides utility functions for memory and string manipulation.
+
+- **Functions:**
+  - `memset`: Sets a block of memory to a specific value.
+  - `memcpy`: Copies data from one memory location to another.
+  - `strlen`: Calculates the length of a null-terminated string.
+
+- **Read More:**
+  - [OSDev: Memory Manipulation](https://wiki.osdev.org/Memory_Manipulation)
+
+---
+
 
 ## Building and Running
 
