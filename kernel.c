@@ -151,8 +151,8 @@ void write_char(char character, int color) {
 //     }
 // }
 
-
-void kernel_main() {
+// Function to print out the greeting with 42
+void greeting() {
     const char *welcome_message = 
     "   ___  _____  ______          _     \n"
     "  /   |/ __  \\ | ___ \\        (_)    \n"
@@ -163,19 +163,19 @@ void kernel_main() {
     "                                      \n";
     
     int greeting_color = 0x02; // Green text on black background
-    int input_color = 0x07; // Light grey text on black background
+  
 
     // Print the welcome message in green color
     while (*welcome_message != '\0') {
         write_char(*welcome_message, greeting_color);
         welcome_message++;
     }
+}
 
-    // Print two new lines after the message
-    write_char('\n', greeting_color);
-    write_char('\n', greeting_color);
+// Function to handle keyboard input and print it
+void handle_keyboard_input() {
+    int input_color = 0x07; // Light grey text on black background
 
-    // Handle keyboard input in a loop
     while (1) {
         unsigned char scancode = get_scancode(); // This is a placeholder for your keyboard input logic
 
@@ -203,6 +203,18 @@ void kernel_main() {
             write_char(character, input_color); // Print input in light grey
         }
     }
+}
+
+
+void kernel_main() {
+    greeting();
+
+    // Print two new lines after the message
+    write_char('\n', 0);
+    write_char('\n', 0);
+
+    handle_keyboard_input();
+
 }
 
 
