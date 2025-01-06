@@ -1,38 +1,30 @@
-#define VIDEO_MEMORY 0xB8000
-#define CURSOR_COMMAND_PORT 0x3D4
-#define CURSOR_DATA_PORT 0x3D5
-#define SCREEN_WIDTH 80
-#define SCREEN_HEIGHT 25
-#define KEYBOARD_DATA_PORT 0x60
-#define KEYBOARD_STATUS_PORT 0x64
-#define KEYBOARD_CMD_PORT 0x64
 
 #include "utils.h"
 
-// Function to write a byte to a port
-void outb(uint16_t port, uint8_t value) {
-    __asm__ volatile("outb %0, %1" : : "a"(value), "Nd"(port));
-}
+// // Function to write a byte to a port
+// void outb(uint16_t port, uint8_t value) {
+//     __asm__ volatile("outb %0, %1" : : "a"(value), "Nd"(port));
+// }
 
-// Function to read a byte from a port
-uint8_t inb(uint16_t port) {
-    uint8_t result;
-    __asm__ volatile("inb %1, %0" : "=a"(result) : "Nd"(port));
-    return result;
-}
+// // Function to read a byte from a port
+// uint8_t inb(uint16_t port) {
+//     uint8_t result;
+//     __asm__ volatile("inb %1, %0" : "=a"(result) : "Nd"(port));
+//     return result;
+// }
 
-// Function to move the cursor
-void move_cursor(int row, int col) {
-    uint16_t position = row * SCREEN_WIDTH + col;
+// // Function to move the cursor
+// void move_cursor(int row, int col) {
+//     uint16_t position = row * SCREEN_WIDTH + col;
 
-    // Set high byte
-    outb(CURSOR_COMMAND_PORT, 0x0E);
-    outb(CURSOR_DATA_PORT, (uint8_t)(position >> 8));
+//     // Set high byte
+//     outb(CURSOR_COMMAND_PORT, 0x0E);
+//     outb(CURSOR_DATA_PORT, (uint8_t)(position >> 8));
 
-    // Set low byte
-    outb(CURSOR_COMMAND_PORT, 0x0F);
-    outb(CURSOR_DATA_PORT, (uint8_t)(position & 0xFF));
-}
+//     // Set low byte
+//     outb(CURSOR_COMMAND_PORT, 0x0F);
+//     outb(CURSOR_DATA_PORT, (uint8_t)(position & 0xFF));
+// }
 
 // Function to handle keyboard input
 uint8_t get_scancode() {
@@ -100,54 +92,54 @@ uint8_t handle_case(uint8_t character) {
 }
 
 
-// Function to print a character on the screen
-void write_char(char character, int color) {
-    uint16_t *video_memory = (uint16_t *)VIDEO_MEMORY;
-    static int cursor_x = 0;
-    static int cursor_y = 0;
+// // Function to print a character on the screen
+// void write_char(char character, int color) {
+//     uint16_t *video_memory = (uint16_t *)VIDEO_MEMORY;
+//     static int cursor_x = 0;
+//     static int cursor_y = 0;
 
-    if (character == '\n') {
-        cursor_y++;
-        cursor_x = 0;
-    } else {
-        uint16_t *location = video_memory + (cursor_y * SCREEN_WIDTH + cursor_x);
-        *location = (color << 8) | character;
-        cursor_x++;
-    }
+//     if (character == '\n') {
+//         cursor_y++;
+//         cursor_x = 0;
+//     } else {
+//         uint16_t *location = video_memory + (cursor_y * SCREEN_WIDTH + cursor_x);
+//         *location = (color << 8) | character;
+//         cursor_x++;
+//     }
 
-    // Move to the next line if the end of the current line is reached
-    if (cursor_x >= SCREEN_WIDTH) {
-        cursor_x = 0;
-        cursor_y++;
-    }
+//     // Move to the next line if the end of the current line is reached
+//     if (cursor_x >= SCREEN_WIDTH) {
+//         cursor_x = 0;
+//         cursor_y++;
+//     }
 
-    // If the cursor moves past the last line, scroll the screen
-    if (cursor_y >= SCREEN_HEIGHT) {
-        cursor_y = SCREEN_HEIGHT - 1; // Keep the cursor at the bottom
+//     // If the cursor moves past the last line, scroll the screen
+//     if (cursor_y >= SCREEN_HEIGHT) {
+//         cursor_y = SCREEN_HEIGHT - 1; // Keep the cursor at the bottom
         
-        // Scroll the screen up by one line
-        memcpy(video_memory, 
-               video_memory + SCREEN_WIDTH, 
-               (SCREEN_HEIGHT - 1) * SCREEN_WIDTH * sizeof(uint16_t));
+//         // Scroll the screen up by one line
+//         memcpy(video_memory, 
+//                video_memory + SCREEN_WIDTH, 
+//                (SCREEN_HEIGHT - 1) * SCREEN_WIDTH * sizeof(uint16_t));
 
-        // Clear the last line
-        memset(video_memory + (SCREEN_HEIGHT - 1) * SCREEN_WIDTH, 
-               0x0F00, 
-               SCREEN_WIDTH * sizeof(uint16_t)); // White background
-    }
+//         // Clear the last line
+//         memset(video_memory + (SCREEN_HEIGHT - 1) * SCREEN_WIDTH, 
+//                0x0F00, 
+//                SCREEN_WIDTH * sizeof(uint16_t)); // White background
+//     }
 
-    // Move the cursor to the new position
-    move_cursor(cursor_y, cursor_x);
-}
+//     // Move the cursor to the new position
+//     move_cursor(cursor_y, cursor_x);
+// }
 
 
-// Function to print a string
-void print_string(const char *message, int color) {
-    while (*message != '\0') {
-        write_char(*message, color);
-        message++;
-    }
-}
+// // Function to print a string
+// void print_string(const char *message, int color) {
+//     while (*message != '\0') {
+//         write_char(*message, color);
+//         message++;
+//     }
+// }
 
 // Function to print out the greeting with 42
 void greeting() {
@@ -206,6 +198,18 @@ void handle_keyboard_input() {
 
 void kernel_main() {
     greeting();
+
+    // Initial welcome message
+    printk("Starting Bare-Metal Kernel...\n");
+
+    // Example of printing an integer
+    int kernel_version_major = 1;
+    int kernel_version_minor = 0;
+    printk("Kernel Version: %d.%d\n", kernel_version_major, kernel_version_minor);
+
+    // Example of printing a memory address
+    void *kernel_base_address = (void *)0x100000;
+    printk("Kernel Base Address: 0x%x\n", (uint32_t)kernel_base_address);
 
     // Print two new lines after the message
     write_char('\n', 0);

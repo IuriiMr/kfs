@@ -1,22 +1,5 @@
 #include "types.h"
 
-// // Memory set function
-// void memset(void *dest, uint8_t value, size_t len) {
-//     uint8_t *ptr = (uint8_t*)dest;
-//     for (size_t i = 0; i < len; i++) {
-//         ptr[i] = value;
-//     }
-// }
-
-// // Memory copy function
-// void memcpy(void *dest, const void *src, size_t len) {
-//     const uint8_t *src_ptr = (const uint8_t*)src;
-//     uint8_t *dest_ptr = (uint8_t*)dest;
-//     for (size_t i = 0; i < len; i++) {
-//         dest_ptr[i] = src_ptr[i];
-//     }
-// }
-
 // String length function
 size_t strlen(const char *str) {
     size_t len = 0;
@@ -42,3 +25,154 @@ void memcpy(void *dest, const void *src, size_t count) {
         dest_ptr[i] = src_ptr[i];
     }
 }
+
+// Function to write a byte to a port
+void outb(uint16_t port, uint8_t value) {
+    __asm__ volatile("outb %0, %1" : : "a"(value), "Nd"(port));
+}
+
+// Function to read a byte from a port
+uint8_t inb(uint16_t port) {
+    uint8_t result;
+    __asm__ volatile("inb %1, %0" : "=a"(result) : "Nd"(port));
+    return result;
+}
+
+// Function to move the cursor
+void move_cursor(int row, int col) {
+    uint16_t position = row * SCREEN_WIDTH + col;
+
+    // Set high byte
+    outb(CURSOR_COMMAND_PORT, 0x0E);
+    outb(CURSOR_DATA_PORT, (uint8_t)(position >> 8));
+
+    // Set low byte
+    outb(CURSOR_COMMAND_PORT, 0x0F);
+    outb(CURSOR_DATA_PORT, (uint8_t)(position & 0xFF));
+}
+
+
+// Function to print a character on the screen
+void write_char(char character, int color) {
+    uint16_t *video_memory = (uint16_t *)VIDEO_MEMORY;
+    static int cursor_x = 0;
+    static int cursor_y = 0;
+
+    if (character == '\n') {
+        cursor_y++;
+        cursor_x = 0;
+    } else {
+        uint16_t *location = video_memory + (cursor_y * SCREEN_WIDTH + cursor_x);
+        *location = (color << 8) | character;
+        cursor_x++;
+    }
+
+    // Move to the next line if the end of the current line is reached
+    if (cursor_x >= SCREEN_WIDTH) {
+        cursor_x = 0;
+        cursor_y++;
+    }
+
+    // If the cursor moves past the last line, scroll the screen
+    if (cursor_y >= SCREEN_HEIGHT) {
+        cursor_y = SCREEN_HEIGHT - 1; // Keep the cursor at the bottom
+        
+        // Scroll the screen up by one line
+        memcpy(video_memory, 
+               video_memory + SCREEN_WIDTH, 
+               (SCREEN_HEIGHT - 1) * SCREEN_WIDTH * sizeof(uint16_t));
+
+        // Clear the last line
+        memset(video_memory + (SCREEN_HEIGHT - 1) * SCREEN_WIDTH, 
+               0x0F00, 
+               SCREEN_WIDTH * sizeof(uint16_t)); // White background
+    }
+
+    // Move the cursor to the new position
+    move_cursor(cursor_y, cursor_x);
+}
+
+
+// Function to print a string
+void print_string(const char *message, int color) {
+    while (*message != '\0') {
+        write_char(*message, color);
+        message++;
+    }
+}
+
+// Helper function to print a number
+void print_number(int num, int base, int color) {
+    char buffer[32];
+    const char *digits = "0123456789ABCDEF";
+    int i = 30;
+    buffer[31] = '\0';
+
+    if (num == 0) {
+        buffer[i--] = '0';
+    } else {
+        int is_negative = 0;
+        if (num < 0 && base == 10) {
+            is_negative = 1;
+            num = -num;
+        }
+
+        while (num > 0) {
+            buffer[i--] = digits[num % base];
+            num /= base;
+        }
+
+        if (is_negative) {
+            buffer[i--] = '-';
+        }
+    }
+
+    print_string(&buffer[i + 1], color);
+}
+
+// printk function for formatted output
+void printk(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+
+    const char *p = format;
+    int color = 0x07; // Light grey by default
+
+    while (*p) {
+        if (*p == '%') {
+            p++;
+            switch (*p) {
+                case 'd': { // Integer
+                    int num = va_arg(args, int);
+                    print_number(num, 10, color);
+                    break;
+                }
+                case 'x': { // Hexadecimal
+                    int num = va_arg(args, int);
+                    print_number(num, 16, color);
+                    break;
+                }
+                case 'c': { // Character
+                    char c = (char)va_arg(args, int);
+                    write_char(c, color);
+                    break;
+                }
+                case 's': { // String
+                    const char *str = va_arg(args, const char *);
+                    print_string(str, color);
+                    break;
+                }
+                default:
+                    write_char('%', color);
+                    write_char(*p, color);
+                    break;
+            }
+        } else {
+            write_char(*p, color);
+        }
+        p++;
+    }
+
+    va_end(args);
+}
+

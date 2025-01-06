@@ -41,6 +41,28 @@ Defines custom data types for better portability and readability.
   - Explicit integer sizes like `uint8_t`, `int32_t`.
   - Boolean type `bool` with `true` and `false` values.
   - Definition of `size_t` for memory-related operations.
+
+- **Custom `va_list` Implementation**
+
+   Since this is a bare-metal kernel, we cannot rely on the standard library. Instead, we provide a custom implementation of the `va_list` functionality, which is essential for variadic functions like `printk`.
+
+   - Components of the Custom `va_list`:
+
+   1. **`va_list`**:  
+   A pointer to the start of the variable arguments in memory.  
+
+   2. **`va_start`**:  
+      A macro that initializes the `va_list` pointer to point to the first argument after the last fixed parameter.  
+
+   3. **`va_arg`**:  
+      A macro that retrieves the next argument from the `va_list` based on the specified type. It advances the pointer to the next argument in memory.  
+
+   4. **`va_end`**:  
+      A macro to clean up the `va_list` by resetting the pointer to `NULL`.  
+
+   5. **`VA_SIZE(type)`**:  
+      A helper macro that ensures proper alignment of the arguments in memory (aligned to `uint32_t` boundaries).  
+
 - **Read More:**
   - [Fixed-Width Integer Types in C](https://en.wikipedia.org/wiki/C_data_types#Fixed-width_integer_types)
 
@@ -53,7 +75,22 @@ Provides utility functions for memory and string manipulation.
   - `memset`: Sets a block of memory to a specific value.
   - `memcpy`: Copies data from one memory location to another.
   - `strlen`: Calculates the length of a null-terminated string.
+- **Formatted Output**
+  - `printk`: A lightweight `printf`-like function for debugging and displaying formatted messages.
 
+- **Using `printk`**
+
+   - The `printk` function supports the following format specifiers:
+      - `%d`: Print an integer in decimal.
+      - `%x`: Print an integer in hexadecimal.
+      - `%c`: Print a single character.
+      - `%s`: Print a null-terminated string.
+
+   Example:
+   ```c
+   printk("Booting kernel... Version: %d.%d\n", 1, 0);
+   printk("Memory location: 0x%x\n", 0xDEADBEEF);
+   ```
 - **Read More:**
   - [OSDev: Memory Manipulation](https://wiki.osdev.org/Memory_Manipulation)
 
