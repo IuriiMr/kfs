@@ -162,6 +162,10 @@ void greeting() {
     }
 }
 
+// Variables for tracking the current cursor position
+int cursor_row = 0;
+int cursor_col = 0;
+
 // Function to handle keyboard input and print it
 void handle_keyboard_input() {
     int input_color = 0x07; // Light grey text on black background
@@ -173,6 +177,29 @@ void handle_keyboard_input() {
         handle_shift_key(scancode);
         // Handle the Caps Lock key state
         handle_caps_lock_key(scancode);
+
+        // Handle arrow key presses for cursor movement
+        if (scancode == 0x48) { // Up arrow
+            if (cursor_row > 0) {
+                cursor_row--;
+            }
+        } else if (scancode == 0x50) { // Down arrow
+            if (cursor_row < VGA_HEIGHT - 1) {
+                cursor_row++;
+            } else {
+                // Scroll when reaching the bottom
+                scroll();
+                cursor_row = VGA_HEIGHT - 1; // Ensure the cursor stays within bounds
+            }
+        } else if (scancode == 0x4B) { // Left arrow
+            if (cursor_col > 0) {
+                cursor_col--;
+            }
+        } else if (scancode == 0x4D) { // Right arrow
+            if (cursor_col < VGA_WIDTH - 1) {
+                cursor_col++;
+            }
+        }
 
 
         // Convert scancode to ASCII (basic example)
@@ -192,6 +219,9 @@ void handle_keyboard_input() {
             character = handle_case(character); // Apply Caps Lock and Shift logic
             write_char(character, input_color); // Print input in light grey
         }
+        
+        // Update the cursor position after each key press
+        move_cursor(cursor_row, cursor_col);
     }
 }
 

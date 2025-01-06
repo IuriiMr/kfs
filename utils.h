@@ -1,7 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include "types.h" // For size_t type
+#include "types.h"
 
 /**
  * memset - Fills a block of memory with a specified value.
@@ -19,21 +19,67 @@ void memset(void *dest, unsigned short value, size_t count);
  */
 void memcpy(void *dest, const void *src, size_t count);
 
-// Formatted output
+/**
+ * printk - Prints formatted output to the screen.
+ * @format: A string containing the format specification.
+ * @...: Variable arguments depending on the format string.
+ */
 void printk(const char *format, ...);
 
-
+/**
+ * write_char - Writes a single character to the screen.
+ * @character: The character to print.
+ * @color: The color attribute for the character.
+ */
 void write_char(char character, int color);
-// Function to print a string
+
+/**
+ * print_string - Prints a string to the screen with a specific color.
+ * @message: The string to print.
+ * @color: The color attribute for the text.
+ */
 void print_string(const char *message, int color);
-// Helper function to print a number
+
+/**
+ * print_number - Prints a number in a given base with a specific color.
+ * @num: The number to print.
+ * @base: The base to print the number in (e.g., 10 for decimal, 16 for hexadecimal).
+ * @color: The color attribute for the number.
+ */
 void print_number(int num, int base, int color);
 
-// Function to write a byte to a port
+/**
+ * outb - Writes a byte to an I/O port.
+ * @port: The I/O port address.
+ * @value: The byte value to write to the port.
+ */
 void outb(uint16_t port, uint8_t value);
-// Function to read a byte from a port
+
+/**
+ * inb - Reads a byte from an I/O port.
+ * @port: The I/O port address.
+ * 
+ * Return: The byte value read from the port.
+ */
 uint8_t inb(uint16_t port);
-// Function to move the cursor
+
+/**
+ * scroll - Scrolls the screen up by one line when the screen is full.
+ */
+void scroll(void);
+
+/**
+ * move_cursor - Moves the text cursor to a specific location on the screen.
+ * @row: The row to move the cursor to.
+ * @col: The column to move the cursor to.
+ */
 void move_cursor(int row, int col);
 
+/**
+ * set_cursor_position - Sets the position of the cursor.
+ * @pos: The position in the video memory (0-based).
+ */
+void set_cursor_position(uint16_t pos);
+
 #endif // UTILS_H
+

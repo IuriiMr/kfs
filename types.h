@@ -38,5 +38,10 @@ typedef char *va_list;
 #define KEYBOARD_STATUS_PORT 0x64
 #define KEYBOARD_CMD_PORT 0x64
 
+#define VGA_WIDTH 80
+#define VGA_HEIGHT 25
+#define VGA_MEMORY (char *)0xB8000
+#define VGA_COLOR 0x07 // White on black text color
+
 
 #endif // TYPES_H
