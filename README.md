@@ -28,6 +28,8 @@ Key features:
 This assembly file is the bootloader, which:
 - Complies with the Multiboot specification.
 - Sets up the stack and jumps to the kernel's entry point (`kernel_main`).
+- **Read More:**
+   - [Booting the Operating System](https://wiki.osdev.org/Bare_Bones#Booting_the_Operating_System)
 
 ### 5. `grub.cfg`
 This configuration file is used by GRUB to boot the kernel. It specifies the timeout, default entry, and the path to the kernel binary.
