@@ -24,24 +24,24 @@ typedef char *va_list;
 
 // Define macros for variadic arguments
 #define VA_SIZE(type) ((sizeof(type) + sizeof(uint32_t) - 1) & ~(sizeof(uint32_t) - 1))
-
 #define va_start(ap, last) (ap = (va_list)(&last + 1))
 #define va_arg(ap, type) (*(type *)((ap += VA_SIZE(type)) - VA_SIZE(type)))
 #define va_end(ap) (ap = NULL)
 
-#define VIDEO_MEMORY 0xB8000
+// Define values for the input ports
 #define CURSOR_COMMAND_PORT 0x3D4
 #define CURSOR_DATA_PORT 0x3D5
-#define SCREEN_WIDTH 80
-#define SCREEN_HEIGHT 25
 #define KEYBOARD_DATA_PORT 0x60
 #define KEYBOARD_STATUS_PORT 0x64
 #define KEYBOARD_CMD_PORT 0x64
 
+// Define values for the screen
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
 #define VGA_MEMORY (char *)0xB8000
-#define VGA_COLOR 0x07 // White on black text color
+#define INPUT_COLOR 0x07 // LIght grey text on black background
+#define GREETING_COLOR 0x02 // Green text on black background
+  
 
 
 #endif // TYPES_H

@@ -64,7 +64,7 @@ void scroll(void) {
 
     // Clear the last line
     for (int i = (VGA_HEIGHT - 1) * VGA_WIDTH; i < VGA_HEIGHT * VGA_WIDTH; i++) {
-        vga_buffer[i] = ' ' | (VGA_COLOR << 8);
+        vga_buffer[i] = ' ' | (INPUT_COLOR << 8);
     }
 
     // Move the cursor to the last line (after scroll)
@@ -73,7 +73,7 @@ void scroll(void) {
 
 // Function to print a character on the screen
 void write_char(char character, int color) {
-    uint16_t *video_memory = (uint16_t *)VIDEO_MEMORY;
+    uint16_t *video_memory = (uint16_t *)VGA_MEMORY;
     static int cursor_x = 0;
     static int cursor_y = 0;
 
@@ -81,30 +81,30 @@ void write_char(char character, int color) {
         cursor_y++;
         cursor_x = 0;
     } else {
-        uint16_t *location = video_memory + (cursor_y * SCREEN_WIDTH + cursor_x);
+        uint16_t *location = video_memory + (cursor_y * VGA_WIDTH + cursor_x);
         *location = (color << 8) | character;
         cursor_x++;
     }
 
     // Move to the next line if the end of the current line is reached
-    if (cursor_x >= SCREEN_WIDTH) {
+    if (cursor_x >= VGA_WIDTH) {
         cursor_x = 0;
         cursor_y++;
     }
 
     // If the cursor moves past the last line, scroll the screen
-    if (cursor_y >= SCREEN_HEIGHT) {
-        cursor_y = SCREEN_HEIGHT - 1; // Keep the cursor at the bottom
+    if (cursor_y >= VGA_HEIGHT) {
+        cursor_y = VGA_HEIGHT - 1; // Keep the cursor at the bottom
         
         // Scroll the screen up by one line
         memcpy(video_memory, 
-               video_memory + SCREEN_WIDTH, 
-               (SCREEN_HEIGHT - 1) * SCREEN_WIDTH * sizeof(uint16_t));
+               video_memory + VGA_WIDTH, 
+               (VGA_HEIGHT - 1) * VGA_WIDTH * sizeof(uint16_t));
 
         // Clear the last line
-        memset(video_memory + (SCREEN_HEIGHT - 1) * SCREEN_WIDTH, 
+        memset(video_memory + (VGA_HEIGHT - 1) * VGA_WIDTH, 
                0x0F00, 
-               SCREEN_WIDTH * sizeof(uint16_t)); // White background
+               VGA_WIDTH * sizeof(uint16_t)); // White background
     }
 
     // Move the cursor to the new position
@@ -122,8 +122,8 @@ void print_string(const char *message, int color) {
             i = (VGA_HEIGHT - 1) * VGA_WIDTH; // Reset to the last line after scrolling
         }
         
-        // Place character into VGA buffer with specified color
-        vga_buffer[i] = message[i] | (color << 8);
+        // // Place character into VGA buffer with specified color
+        write_char(message[i], color);
         i++;
     }
 
@@ -163,39 +163,38 @@ void printk(const char *format, ...) {
     va_start(args, format);
 
     const char *p = format;
-    int color = 0x07; // Light grey by default
-
+    
     while (*p) {
         if (*p == '%') {
             p++;
             switch (*p) {
                 case 'd': { // Integer
                     int num = va_arg(args, int);
-                    print_number(num, 10, color);
+                    print_number(num, 10, INPUT_COLOR);
                     break;
                 }
                 case 'x': { // Hexadecimal
                     int num = va_arg(args, int);
-                    print_number(num, 16, color);
+                    print_number(num, 16, INPUT_COLOR);
                     break;
                 }
                 case 'c': { // Character
                     char c = (char)va_arg(args, int);
-                    write_char(c, color);
+                    write_char(c, INPUT_COLOR);
                     break;
                 }
                 case 's': { // String
                     const char *str = va_arg(args, const char *);
-                    print_string(str, color);
+                    print_string(str, INPUT_COLOR);
                     break;
                 }
                 default:
-                    write_char('%', color);
-                    write_char(*p, color);
+                    write_char('%', INPUT_COLOR);
+                    write_char(*p, INPUT_COLOR);
                     break;
             }
         } else {
-            write_char(*p, color);
+            write_char(*p, INPUT_COLOR);
         }
         p++;
     }

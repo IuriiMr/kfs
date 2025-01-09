@@ -75,20 +75,16 @@ void greeting() {
     "    |_/\\_____/ \\_|  \\__,_|_|  |_|___/ \n"
     "                                      \n";
     
-    int greeting_color = 0x02; // Green text on black background
-  
-
     // Print the welcome message in green color
     while (*welcome_message != '\0') {
-        write_char(*welcome_message, greeting_color);
+        write_char(*welcome_message, GREETING_COLOR);
         welcome_message++;
     }
 }
 
 // Function to handle keyboard input and print it
 void handle_keyboard_input() {
-    int input_color = 0x07; // Light grey text on black background
-
+    
     while (1) {
         unsigned char scancode = get_scancode(); // This is a placeholder for your keyboard input logic
 
@@ -112,11 +108,10 @@ void handle_keyboard_input() {
         // If a valid character is found, print it in light grey color
         if (character != 0) {
             character = handle_case(character); // Apply Caps Lock and Shift logic
-            write_char(character, input_color); // Print input in light grey
+            write_char(character, INPUT_COLOR); // Print input in light grey
         }
     }
 }
-
 
 void kernel_main() {
     greeting();
@@ -137,8 +132,7 @@ void kernel_main() {
     write_char('\n', 0);
     write_char('\n', 0);
 
+    // Handle keyboard entries and print them
     handle_keyboard_input();
 }
-
-
 
