@@ -1,30 +1,4 @@
-
 #include "utils.h"
-
-// // Function to write a byte to a port
-// void outb(uint16_t port, uint8_t value) {
-//     __asm__ volatile("outb %0, %1" : : "a"(value), "Nd"(port));
-// }
-
-// // Function to read a byte from a port
-// uint8_t inb(uint16_t port) {
-//     uint8_t result;
-//     __asm__ volatile("inb %1, %0" : "=a"(result) : "Nd"(port));
-//     return result;
-// }
-
-// // Function to move the cursor
-// void move_cursor(int row, int col) {
-//     uint16_t position = row * SCREEN_WIDTH + col;
-
-//     // Set high byte
-//     outb(CURSOR_COMMAND_PORT, 0x0E);
-//     outb(CURSOR_DATA_PORT, (uint8_t)(position >> 8));
-
-//     // Set low byte
-//     outb(CURSOR_COMMAND_PORT, 0x0F);
-//     outb(CURSOR_DATA_PORT, (uint8_t)(position & 0xFF));
-// }
 
 // Function to handle keyboard input
 uint8_t get_scancode() {
@@ -34,7 +8,6 @@ uint8_t get_scancode() {
     }
     return inb(KEYBOARD_DATA_PORT); // Return the scan code
 }
-
 
 // Variables to track the Shift and Caps Lock state
 uint8_t left_shift_pressed = 0;
@@ -91,56 +64,6 @@ uint8_t handle_case(uint8_t character) {
     return character;
 }
 
-
-// // Function to print a character on the screen
-// void write_char(char character, int color) {
-//     uint16_t *video_memory = (uint16_t *)VIDEO_MEMORY;
-//     static int cursor_x = 0;
-//     static int cursor_y = 0;
-
-//     if (character == '\n') {
-//         cursor_y++;
-//         cursor_x = 0;
-//     } else {
-//         uint16_t *location = video_memory + (cursor_y * SCREEN_WIDTH + cursor_x);
-//         *location = (color << 8) | character;
-//         cursor_x++;
-//     }
-
-//     // Move to the next line if the end of the current line is reached
-//     if (cursor_x >= SCREEN_WIDTH) {
-//         cursor_x = 0;
-//         cursor_y++;
-//     }
-
-//     // If the cursor moves past the last line, scroll the screen
-//     if (cursor_y >= SCREEN_HEIGHT) {
-//         cursor_y = SCREEN_HEIGHT - 1; // Keep the cursor at the bottom
-        
-//         // Scroll the screen up by one line
-//         memcpy(video_memory, 
-//                video_memory + SCREEN_WIDTH, 
-//                (SCREEN_HEIGHT - 1) * SCREEN_WIDTH * sizeof(uint16_t));
-
-//         // Clear the last line
-//         memset(video_memory + (SCREEN_HEIGHT - 1) * SCREEN_WIDTH, 
-//                0x0F00, 
-//                SCREEN_WIDTH * sizeof(uint16_t)); // White background
-//     }
-
-//     // Move the cursor to the new position
-//     move_cursor(cursor_y, cursor_x);
-// }
-
-
-// // Function to print a string
-// void print_string(const char *message, int color) {
-//     while (*message != '\0') {
-//         write_char(*message, color);
-//         message++;
-//     }
-// }
-
 // Function to print out the greeting with 42
 void greeting() {
     const char *welcome_message = 
@@ -162,10 +85,6 @@ void greeting() {
     }
 }
 
-// Variables for tracking the current cursor position
-int cursor_row = 0;
-int cursor_col = 0;
-
 // Function to handle keyboard input and print it
 void handle_keyboard_input() {
     int input_color = 0x07; // Light grey text on black background
@@ -178,31 +97,7 @@ void handle_keyboard_input() {
         // Handle the Caps Lock key state
         handle_caps_lock_key(scancode);
 
-        // Handle arrow key presses for cursor movement
-        if (scancode == 0x48) { // Up arrow
-            if (cursor_row > 0) {
-                cursor_row--;
-            }
-        } else if (scancode == 0x50) { // Down arrow
-            if (cursor_row < VGA_HEIGHT - 1) {
-                cursor_row++;
-            } else {
-                // Scroll when reaching the bottom
-                scroll();
-                cursor_row = VGA_HEIGHT - 1; // Ensure the cursor stays within bounds
-            }
-        } else if (scancode == 0x4B) { // Left arrow
-            if (cursor_col > 0) {
-                cursor_col--;
-            }
-        } else if (scancode == 0x4D) { // Right arrow
-            if (cursor_col < VGA_WIDTH - 1) {
-                cursor_col++;
-            }
-        }
-
-
-        // Convert scancode to ASCII (basic example)
+        // Convert scancode to ASCII
         char character = 0;
 
         // For now, just check for a few basic keys
@@ -219,9 +114,6 @@ void handle_keyboard_input() {
             character = handle_case(character); // Apply Caps Lock and Shift logic
             write_char(character, input_color); // Print input in light grey
         }
-        
-        // Update the cursor position after each key press
-        move_cursor(cursor_row, cursor_col);
     }
 }
 

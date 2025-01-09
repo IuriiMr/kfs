@@ -71,22 +71,6 @@ void scroll(void) {
     move_cursor(VGA_HEIGHT - 1, 0);
 }
 
-
-
-// // Function to move the cursor
-// void move_cursor(int row, int col) {
-//     uint16_t position = row * SCREEN_WIDTH + col;
-
-//     // Set high byte
-//     outb(CURSOR_COMMAND_PORT, 0x0E);
-//     outb(CURSOR_DATA_PORT, (uint8_t)(position >> 8));
-
-//     // Set low byte
-//     outb(CURSOR_COMMAND_PORT, 0x0F);
-//     outb(CURSOR_DATA_PORT, (uint8_t)(position & 0xFF));
-// }
-
-
 // Function to print a character on the screen
 void write_char(char character, int color) {
     uint16_t *video_memory = (uint16_t *)VIDEO_MEMORY;
@@ -173,44 +157,6 @@ void print_number(int num, int base, int color) {
     move_cursor(i / VGA_WIDTH, i % VGA_WIDTH);
 }
 
-
-// // Function to print a string
-// void print_string(const char *message, int color) {
-//     while (*message != '\0') {
-//         write_char(*message, color);
-//         message++;
-//     }
-// }
-
-// // Helper function to print a number
-// void print_number(int num, int base, int color) {
-//     char buffer[32];
-//     const char *digits = "0123456789ABCDEF";
-//     int i = 30;
-//     buffer[31] = '\0';
-
-//     if (num == 0) {
-//         buffer[i--] = '0';
-//     } else {
-//         int is_negative = 0;
-//         if (num < 0 && base == 10) {
-//             is_negative = 1;
-//             num = -num;
-//         }
-
-//         while (num > 0) {
-//             buffer[i--] = digits[num % base];
-//             num /= base;
-//         }
-
-//         if (is_negative) {
-//             buffer[i--] = '-';
-//         }
-//     }
-
-//     print_string(&buffer[i + 1], color);
-// }
-
 // printk function for formatted output
 void printk(const char *format, ...) {
     va_list args;
@@ -253,7 +199,6 @@ void printk(const char *format, ...) {
         }
         p++;
     }
-
     va_end(args);
 }
 
