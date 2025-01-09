@@ -41,7 +41,5 @@ typedef char *va_list;
 #define VGA_MEMORY (char *)0xB8000
 #define INPUT_COLOR 0x07 // LIght grey text on black background
 #define GREETING_COLOR 0x02 // Green text on black background
-  
-
 
 #endif // TYPES_H

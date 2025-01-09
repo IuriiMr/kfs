@@ -3,6 +3,13 @@
 
 #include "types.h"
 
+
+/**
+ * strlen - String length function
+ * @str: The string to mesure.
+ */
+size_t strlen(const char *str);
+
 /**
  * memset - Fills a block of memory with a specified value.
  * @dest: Pointer to the memory block to fill.

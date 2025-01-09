@@ -12,7 +12,7 @@ LINKERFLAGS = -m elf_i386
 TARGET_BIN = kernel.bin
 LINKER_SCRIPT = link.ld
 ASM = boot.asm
-SOURCES = kernel.c utils.c
+SOURCES = kernel.c utils.c keyboard.c
 OBJECTS = $(SOURCES:.c=.o) $(ASM:.asm=.o)
 #OBJECTS = boot.o kernel.o
 

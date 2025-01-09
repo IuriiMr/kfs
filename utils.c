@@ -112,7 +112,7 @@ void write_char(char character, int color) {
 }
 
 void print_string(const char *message, int color) {
-    unsigned short *vga_buffer = (unsigned short *)VGA_MEMORY;
+    // unsigned short *vga_buffer = (unsigned short *)VGA_MEMORY;
     int i = 0;
 
     while (message[i] != '\0') {
