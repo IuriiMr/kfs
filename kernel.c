@@ -20,17 +20,15 @@ void greeting() {
 }
 
 void kernel_main() {
+    // Print out a greeting in color with 42
     greeting();
 
-    // Initial welcome message
-    printk("Starting Bare-Metal Kernel...\n");
-
-    // Example of printing an integer
+    // Example of printing an d integer
     int kernel_version_major = 1;
     int kernel_version_minor = 0;
     printk("Kernel Version: %d.%d\n", kernel_version_major, kernel_version_minor);
 
-    // Example of printing a memory address
+    // Example of printing a x memory address
     void *kernel_base_address = (void *)0x100000;
     printk("Kernel Base Address: 0x%x\n", (uint32_t)kernel_base_address);
 
