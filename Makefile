@@ -54,8 +54,8 @@ attach: $(IMG)
 .PHONY: format
 format: attach
 	@echo "Formatting partition as ext2..."
-	@sudo mkfs.ext2 -b 1024 /dev/loop0p1
-	@sudo tune2fs -m 0 /dev/loop0p1
+	@sudo mkfs.ext2 -b 1024 /dev/loop9p1
+	@sudo tune2fs -m 0 /dev/loop9p1
 	@echo "Filesystem created successfully."
 
 # Target: Mount the partition
@@ -63,7 +63,7 @@ format: attach
 mount: format
 	@echo "Mounting partition to $(MOUNT_POINT)..."
 	@mkdir -p $(MOUNT_POINT)
-	@sudo mount /dev/loop0p1 $(MOUNT_POINT)
+	@sudo mount /dev/loop9p1 $(MOUNT_POINT)
 	@echo "Partition mounted at $(MOUNT_POINT)."
 
 # Target: Install grub in minimum config and remove fonts and themes to fit in 10M image
@@ -72,7 +72,7 @@ grub: mount
 	@echo "Installing GRUB to $(IMG)..."
 	@sudo grub-install --target=i386-pc --boot-directory=mnt/boot \
 		--install-modules="normal linux ext2 part_msdos biosdisk multiboot configfile" \
-		--locales="" --no-floppy /dev/loop0
+		--locales="" --no-floppy /dev/loop9
 	@sudo rm -rf mnt/boot/grub/themes
 	@sudo rm -f mnt/boot/grub/fonts/*.pf2
 
@@ -95,7 +95,7 @@ run: copy
 .PHONY: clean
 clean:
 	@echo "Cleaning up..."
-	@sudo losetup -d /dev/loop0 || true
+	@sudo losetup -d /dev/loop9 || true
 	@rm -rf $(MOUNT_POINT)
 	@rm -f $(OBJECTS) $(TARGET_BIN) $(IMG)
 	@echo "Clean-up complete."
