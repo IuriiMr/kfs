@@ -1,5 +1,7 @@
 #include "utils.h"
 #include "keyboard.h"
+#include "gdt.h"
+#include "print_kernel.h"
 
 // Function to print out the greeting with 42
 void greeting() {
@@ -20,6 +22,15 @@ void greeting() {
 }
 
 void kernel_main() {
+
+        printk("Initializing GDT...\n");
+        gdt_install();
+        printk("GDT successfully loaded!\n");
+
+        printk("Printing kernel stack:\n");
+        print_kernel();
+
+
     // Print out a greeting in color with 42
     greeting();
 

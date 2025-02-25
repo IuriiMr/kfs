@@ -12,7 +12,7 @@ LINKERFLAGS = -m elf_i386
 TARGET_BIN = kernel.bin
 LINKER_SCRIPT = link.ld
 ASM = boot.asm
-SOURCES = kernel.c utils.c keyboard.c
+SOURCES = kernel.c utils.c keyboard.c gdt.c print_kernel.c
 OBJECTS = $(SOURCES:.c=.o) $(ASM:.asm=.o)
 
 # Variables for the disk image
