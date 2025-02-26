@@ -88,5 +88,12 @@ void move_cursor(int row, int col);
  */
 void set_cursor_position(uint16_t pos);
 
+int strcmp(const char *s1, const char *s2);
+
+// Global cursor position variables (Declared as extern)
+extern int cursor_x;
+extern int cursor_y;
+
+
 #endif // UTILS_H
 

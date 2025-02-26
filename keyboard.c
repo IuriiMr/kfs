@@ -20,7 +20,7 @@ const char scancode_map_shift[128] = {
 
 const uint8_t scancode_non_handling_map[128] = {
     0x01, // Esc
-    0x0E, // Backspace
+//    0x0E, // Backspace
     0x0F, // Tab
     0x1D, // Left Control
     0x38, // Left Alt
@@ -123,6 +123,12 @@ const uint8_t scancode_non_handling_map[128] = {
     0xC0  // Menu Key
 };
 
+#define MAX_COMMAND_LENGTH 256
+
+char command_buffer[MAX_COMMAND_LENGTH];  // Buffer to store input command
+uint8_t command_index = 0;  // Tracks current position in buffer
+
+
 // Variables to track the Shift and Caps Lock state
 uint8_t left_shift_pressed = 0;
 uint8_t right_shift_pressed = 0;
@@ -177,6 +183,44 @@ uint8_t is_non_printable(uint8_t scancode) {
     return 0; // Not found, likely printable
 }
 
+void clear_screen() {
+    uint16_t *vga_buffer = (uint16_t *)0xB8000;
+    for (int i = 0; i < 80 * 25; i++) {
+        vga_buffer[i] = (0x0F << 8) | ' ';  // Light gray on black, space character
+    }
+
+    // Reset cursor position in memory
+    cursor_x = 0;
+    cursor_y = 0;
+    move_cursor(0, 0);  // Reset cursor to top-left
+}
+
+
+
+void process_command() {
+    command_buffer[command_index] = '\0';  // Null-terminate the string
+
+    if (command_index == 0) {
+        return;  // Ignore empty input
+    }
+
+    if (strcmp(command_buffer, "clear") == 0) {
+        clear_screen();
+    } else if (strcmp(command_buffer, "help") == 0) {
+        printk("\nAvailable commands:\n");
+        printk("clear - Clears the screen\n");
+        printk("help - Displays this help message\n");
+    } else {
+        printk("\nUnknown command: ");
+        printk(command_buffer);
+        printk("\n");
+    }
+
+    command_index = 0;  // Reset command buffer
+}
+
+
+
 // Function to handle keyboard input and print it
 void handle_keyboard_input() {
     while (1) {
@@ -204,8 +248,26 @@ void handle_keyboard_input() {
             }
             // If a valid character is found, print it in light grey color
             if (character != 0) {
-                write_char(character, INPUT_COLOR);
+
+                if (character == '\b' && command_index > 0) {  // Handle backspace
+                    command_index--;  // Remove last character from the command buffer
+                    cursor_x--;       // Move cursor back
+
+                    // Overwrite the character with a space to "erase" it
+                    write_char(' ', INPUT_COLOR);
+
+                    // Move the cursor back again
+                    cursor_x--;
+                    move_cursor(cursor_y, cursor_x);
+                } else if (character == '\n') {  // If Enter is pressed
+                    printk("\n");
+                    process_command();  // Process the entered command
+                } else if (command_index < MAX_COMMAND_LENGTH - 1) {  // Buffer input
+                    command_buffer[command_index++] = character;
+                    write_char(character, INPUT_COLOR);
+                }
             }
         }
     }
 }
+

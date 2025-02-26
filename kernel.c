@@ -23,16 +23,18 @@ void greeting() {
 
 void kernel_main() {
 
-        printk("Initializing GDT...\n");
-        gdt_install();
-        printk("GDT successfully loaded!\n");
 
-        printk("Printing kernel stack:\n");
-        print_kernel();
+
+//        printk("Printing kernel stack:\n");
+//        print_kernel();
 
 
     // Print out a greeting in color with 42
     greeting();
+
+    printk("Initializing GDT...\n");
+    gdt_install();
+    printk("GDT successfully loaded!\n");
 
     // Example of printing an d integer
     int kernel_version_major = 1;

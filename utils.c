@@ -1,5 +1,10 @@
 #include "types.h"
 
+
+int cursor_x = 0;
+int cursor_y = 0;
+
+
 // String length function
 size_t strlen(const char *str) {
     size_t len = 0;
@@ -74,8 +79,8 @@ void scroll(void) {
 // Function to print a character on the screen
 void write_char(char character, int color) {
     uint16_t *video_memory = (uint16_t *)VGA_MEMORY;
-    static int cursor_x = 0;
-    static int cursor_y = 0;
+//    static int cursor_x = 0;
+//    static int cursor_y = 0;
 
     if (character == '\n') {
         cursor_y++;
@@ -200,4 +205,13 @@ void printk(const char *format, ...) {
     }
     va_end(args);
 }
+
+int strcmp(const char *s1, const char *s2) {
+    while (*s1 && (*s1 == *s2)) {
+        s1++;
+        s2++;
+    }
+    return *(unsigned char *)s1 - *(unsigned char *)s2;
+}
+
 
