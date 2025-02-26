@@ -22,9 +22,6 @@ void greeting() {
 
 void kernel_main() {
 
-    printk("Printing kernel stack:\n");
-    print_kernel();
-
     // Print out a greeting in color with 42
     greeting();
 
@@ -36,6 +33,9 @@ void kernel_main() {
     // Example of printing a x memory address
     void *kernel_base_address = (void *)0x100000;
     printk("Kernel Base Address: 0x%x\n", (uint32_t)kernel_base_address);
+
+    print_kernel();
+
 
     // Print two new lines after the message
     write_char('\n', 0);

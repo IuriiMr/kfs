@@ -62,6 +62,10 @@ void print_number(int num, int base, int color);
  */
 void outb(uint16_t port, uint8_t value);
 
+
+void outw(uint16_t port, uint16_t data);
+
+
 /**
  * inb - Reads a byte from an I/O port.
  * @port: The I/O port address.

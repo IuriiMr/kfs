@@ -3,6 +3,7 @@
 
 #include "types.h"
 
+
 // Function to handle keyboard input
 uint8_t get_scancode();
 

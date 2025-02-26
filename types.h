@@ -16,6 +16,9 @@ typedef long long int64_t;
 // Size type
 typedef unsigned int size_t;
 
+// Define uintptr_t for pointer-to-integer conversions
+typedef unsigned long uintptr_t;
+
 // NULL definition
 #define NULL ((void*)0)
 
@@ -42,4 +45,8 @@ typedef char *va_list;
 #define INPUT_COLOR 0x07 // LIght grey text on black background
 #define GREETING_COLOR 0x02 // Green text on black background
 #define ERROR_COLOR 0x02
+
+#define MAX_COMMAND_LENGTH 256
+#define SHELL_PROMPT "mykernel> "
+
 #endif // TYPES_H
