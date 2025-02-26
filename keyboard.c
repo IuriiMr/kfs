@@ -124,6 +124,7 @@ const uint8_t scancode_non_handling_map[128] = {
 };
 
 #define MAX_COMMAND_LENGTH 256
+#define SHELL_PROMPT "mykernel> "
 
 char command_buffer[MAX_COMMAND_LENGTH];  // Buffer to store input command
 uint8_t command_index = 0;  // Tracks current position in buffer
@@ -195,79 +196,142 @@ void clear_screen() {
     move_cursor(0, 0);  // Reset cursor to top-left
 }
 
-
-
-void process_command() {
-    command_buffer[command_index] = '\0';  // Null-terminate the string
-
-    if (command_index == 0) {
-        return;  // Ignore empty input
-    }
-
-    if (strcmp(command_buffer, "clear") == 0) {
-        clear_screen();
-    } else if (strcmp(command_buffer, "help") == 0) {
-        printk("\nAvailable commands:\n");
-        printk("clear - Clears the screen\n");
-        printk("help - Displays this help message\n");
+void execute_command(char *command) {
+    if (strcmp(command, "clear") == 0) {
+        clear_screen();  // Clear screen function
+        move_cursor(0, 0);
+    } else if (strcmp(command, "help") == 0) {
+        print_string("\nAvailable commands:\n", INPUT_COLOR);
+        print_string("clear - Clear the screen\n", INPUT_COLOR);
+        print_string("help  - Show this help message\n", INPUT_COLOR);
     } else {
-        printk("\nUnknown command: ");
-        printk(command_buffer);
-        printk("\n");
+        print_string("\nUnknown command: ", ERROR_COLOR);
+        print_string(command, ERROR_COLOR);
+        print_string("\n", ERROR_COLOR);
     }
-
-    command_index = 0;  // Reset command buffer
 }
 
 
+//void process_command() {
+//    command_buffer[command_index] = '\0';  // Null-terminate the string
+//
+//    if (command_index == 0) {
+//        return;  // Ignore empty input
+//    }
+//
+//    if (strcmp(command_buffer, "clear") == 0) {
+//        clear_screen();
+//    } else if (strcmp(command_buffer, "help") == 0) {
+//        printk("\nAvailable commands:\n");
+//        printk("clear - Clears the screen\n");
+//        printk("help - Displays this help message\n");
+//    } else {
+//        printk("\nUnknown command: ");
+//        printk(command_buffer);
+//        printk("\n");
+//    }
+//
+//    command_index = 0;  // Reset command buffer
+//}
 
-// Function to handle keyboard input and print it
+
+// Function to print the shell prompt
+void print_prompt() {
+    printk(SHELL_PROMPT, INPUT_COLOR);
+}
+
+// Modify the handle_keyboard_input function
 void handle_keyboard_input() {
+    print_prompt();  // Show the prompt at the start
+
     while (1) {
-        unsigned char scancode = get_scancode(); // This is a placeholder for your keyboard input logic
-        // Handle the Shift key state
+        unsigned char scancode = get_scancode();
         handle_shift_key(scancode);
-        // Handle the Caps Lock key state
         handle_caps_lock_key(scancode);
-        // Check for non-printable key
+
         if (is_non_printable(scancode)) {
-            continue; // Ignore non-printable keys
+            continue;
         }
 
         if (scancode < 128) {
-            char character = 0;
-            // Use Shift and Caps Lock to determine character
-            if (is_shift_pressed()) {
-                character = scancode_map_shift[scancode];
-            } else {
-                character = scancode_map[scancode];
+            char character = is_shift_pressed() ? scancode_map_shift[scancode] : scancode_map[scancode];
+
+            // Handle backspace
+            if (character == '\b' && command_index > 0) {
+                command_index--;
+                cursor_x--;
+                write_char(' ', INPUT_COLOR);  // Overwrite character with space
+                cursor_x--;
+                move_cursor(cursor_y, cursor_x);
+                continue;
             }
-            // Apply Caps Lock for alphabetic characters if Shift is not pressed
-            if (!is_shift_pressed() && caps_lock_on && character >= 'a' && character <= 'z') {
-                character -= 32; // Convert to uppercase
+
+            // Handle Enter key (execute command)
+            if (character == '\n') {
+                command_buffer[command_index] = '\0';  // Null-terminate the command
+                execute_command(command_buffer);  // Execute the command
+                command_index = 0;  // Reset buffer
+                print_prompt();  // Show new prompt
+                continue;
             }
-            // If a valid character is found, print it in light grey color
-            if (character != 0) {
 
-                if (character == '\b' && command_index > 0) {  // Handle backspace
-                    command_index--;  // Remove last character from the command buffer
-                    cursor_x--;       // Move cursor back
-
-                    // Overwrite the character with a space to "erase" it
-                    write_char(' ', INPUT_COLOR);
-
-                    // Move the cursor back again
-                    cursor_x--;
-                    move_cursor(cursor_y, cursor_x);
-                } else if (character == '\n') {  // If Enter is pressed
-                    printk("\n");
-                    process_command();  // Process the entered command
-                } else if (command_index < MAX_COMMAND_LENGTH - 1) {  // Buffer input
-                    command_buffer[command_index++] = character;
-                    write_char(character, INPUT_COLOR);
-                }
+            // Store character in buffer and print it
+            if (command_index < 255) {
+                command_buffer[command_index++] = character;
+                write_char(character, INPUT_COLOR);
             }
         }
     }
 }
 
+//
+//// Function to handle keyboard input and print it
+//void handle_keyboard_input() {
+//    while (1) {
+//        unsigned char scancode = get_scancode(); // This is a placeholder for your keyboard input logic
+//        // Handle the Shift key state
+//        handle_shift_key(scancode);
+//        // Handle the Caps Lock key state
+//        handle_caps_lock_key(scancode);
+//        // Check for non-printable key
+//        if (is_non_printable(scancode)) {
+//            continue; // Ignore non-printable keys
+//        }
+//
+//        if (scancode < 128) {
+//            char character = 0;
+//            // Use Shift and Caps Lock to determine character
+//            if (is_shift_pressed()) {
+//                character = scancode_map_shift[scancode];
+//            } else {
+//                character = scancode_map[scancode];
+//            }
+//            // Apply Caps Lock for alphabetic characters if Shift is not pressed
+//            if (!is_shift_pressed() && caps_lock_on && character >= 'a' && character <= 'z') {
+//                character -= 32; // Convert to uppercase
+//            }
+//            // If a valid character is found, print it in light grey color
+//            if (character != 0) {
+//
+//                if (character == '\b' && command_index > 0) {  // Handle backspace
+//                    command_index--;  // Remove last character from the command buffer
+//                    cursor_x--;       // Move cursor back
+//
+//                    // Overwrite the character with a space to "erase" it
+//                    write_char(' ', INPUT_COLOR);
+//
+//                    // Move the cursor back again
+//                    cursor_x--;
+//                    move_cursor(cursor_y, cursor_x);
+//                } else if (character == '\n') {  // If Enter is pressed
+//                    printk("\n");
+//                    process_command();  // Process the entered command
+//                } else if (command_index < MAX_COMMAND_LENGTH - 1) {  // Buffer input
+//                    command_buffer[command_index++] = character;
+//                    write_char(character, INPUT_COLOR);
+//                }
+//            }
+//        }
+//    }
+//}
+//

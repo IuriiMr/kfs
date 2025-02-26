@@ -14,6 +14,10 @@ SECTIONS {
         *(.text)       /* Include the text section (kernel code) */
     }
 
+    .rodata : {
+        *(.rodata)  /* Read-only data */
+    }
+
     .data : {
         *(.data)       /* Data section */
     }

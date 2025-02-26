@@ -1,6 +1,5 @@
 #include "utils.h"
 #include "keyboard.h"
-#include "gdt.h"
 #include "print_kernel.h"
 
 // Function to print out the greeting with 42
@@ -23,18 +22,11 @@ void greeting() {
 
 void kernel_main() {
 
-
-
-//        printk("Printing kernel stack:\n");
-//        print_kernel();
-
+    printk("Printing kernel stack:\n");
+    print_kernel();
 
     // Print out a greeting in color with 42
     greeting();
-
-    printk("Initializing GDT...\n");
-    gdt_install();
-    printk("GDT successfully loaded!\n");
 
     // Example of printing an d integer
     int kernel_version_major = 1;
