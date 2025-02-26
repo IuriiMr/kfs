@@ -39,19 +39,30 @@ section .gdt
 align 16
 global gdt_start
 gdt_start:
-    dq 0x0000000000000000  ; Null descriptor
-    dq 0x00CF9A000000FFFF  ; Kernel code segment (0x9A = 10011010b)
-    dq 0x00CF92000000FFFF  ; Kernel data segment (0x92 = 10010010b)
-    dq 0x00CFFA000000FFFF  ; User code segment (0xFA = 11111010b)
-    dq 0x00CFF2000000FFFF  ; User data segment (0xF2 = 11110010b)
-    dq 0x0000000000000000  ; User stack segment (can be updated later)
+    ; Null descriptor
+    dq 0x0000000000000000
+
+    ; Kernel code segment (0x9A = 10011010b, 32-bit, accessed, readable)
+    dq 0x00CF9A000000FFFF  ; Base: 0x00000000, Limit: 0xFFFFF, Type: 0x9A (Kernel Code, PL0)
+
+    ; Kernel data segment (0x92 = 10010010b, 32-bit, accessed, writable)
+    dq 0x00CF92000000FFFF  ; Base: 0x00000000, Limit: 0xFFFFF, Type: 0x92 (Kernel Data, PL0)
+
+    ; User code segment (0xFA = 11111010b, 32-bit, accessed, readable)
+    dq 0x00CFFA000000FFFF  ; Base: 0x00000000, Limit: 0xFFFFF, Type: 0xFA (User Code, PL3)
+
+    ; User data segment (0xF2 = 11110010b, 32-bit, accessed, writable)
+    dq 0x00CFF2000000FFFF  ; Base: 0x00000000, Limit: 0xFFFFF, Type: 0xF2 (User Data, PL3)
+
+    ; User stack segment (0xF4 = 11110100b, 32-bit, accessed, writable)
+    dq 0x00CFF4000000FFFF  ; Base: 0x00000000, Limit: 0xFFFFF, Type: 0xF4 (User Stack, PL3)
 
 section .rodata
 
 ; GDT pointer: The pointer to the GDT (limit + base)
 section .data
 gdt_ptr:
-    dw 0x2F         ; GDT size (5 entries * 8 bytes each - 1)
+    dw 0x2F         ; GDT size (6 entries * 8 bytes each - 1)
     dd 0x00000800   ; Base address of the GDT
 
 section .bss
