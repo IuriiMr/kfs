@@ -1,102 +1,180 @@
-    GDT Definition (.gdt Section):
-        gdt_start defines the Global Descriptor Table entries.
-        Each entry in the GDT is 8 bytes. The 6 entries defined are:
-            Null Descriptor: Used as a placeholder for the 0 index.
-            Kernel Code Segment: Code segment for the kernel (executive, read).
-            Kernel Data Segment: Data segment for the kernel (read/write).
-            User Code Segment: Code segment for user mode (execute/read).
-            User Data Segment: Data segment for user mode (read/write).
-            User Stack (can be updated later): A placeholder for the user stack descriptor (this can be defined or updated later).
 
-    GDT Pointer (gdt_ptr):
-        The GDT pointer is defined to point to the GDT, which consists of the limit and base address of the GDT.
-        The limit is 0x2F because we have 6 GDT entries (6 entries * 8 bytes = 48 bytes, 0x2F).
-        The base is set to the address of gdt_start.
+## **1. What is the Global Descriptor Table (GDT)?**
+The **GDT** is a table that defines memory segments in **protected mode**. It tells the CPU how to access memory and defines:
+- **Base address** (where the segment starts in memory)
+- **Limit** (maximum addressable memory inside the segment)
+- **Access rights** (read/write/execute permissions)
+- **Privilege level** (kernel mode or user mode)
 
-    GDT Flush (gdt_flush function):
-        The GDT Flush function uses the lgdt instruction to load the GDT.
-        After loading the GDT, it loads the segment selectors (ds, es, fs, gs, and ss) to use the new descriptors.
-        The gdt_flush function is called to set the Global Descriptor Table into the CPU registers.
+In real mode, segmentation is used differently, but protected mode relies on **flat memory** with GDT managing access and permissions.
 
-    Stack Setup and Calling Kernel:
-        The stack is initialized, and the kernel_main function is called.
-        This ensures that after the bootloader finishes execution, the kernel can run with the new GDT in place.
+---
 
-How It Works:
+## **2. How is the GDT Created and Filled in the Kernel?**
+The kernel defines the **GDT at memory location `0x800`** in the `.gdt` section using assembly and the linker script.
 
-    When the bootloader runs, it first sets up the stack and the GDT.
-    The gdt_flush function is called to load the new GDT and switch to the new memory model using the appropriate segment selectors.
-    The kernel can then start running, using the newly set up GDT for the kernel and user modes.
+### **a. GDT Entries (Defined in `boot.asm`):**
+The GDT has **six entries**, each **8 bytes** long (total size: `6 * 8 = 48` bytes or `0x30` in hexadecimal). The GDT entries include:
 
-This code will allow the kernel to run with proper segmentation using a GDT. You can further customize the GDT entries as required.
+1. **Null Descriptor** *(Always present)*
+2. **Kernel Code Segment** *(Ring 0, executable)*
+3. **Kernel Data Segment** *(Ring 0, read/write)*
+4. **User Code Segment** *(Ring 3, executable)*
+5. **User Data Segment** *(Ring 3, read/write)*
+6. **User Stack Segment** *(Ring 3, for user processes)*
 
+Each entry is **64-bit (8 bytes)** and stored in **little-endian format**.
 
+#### **GDT Format (64-bit entry structure)**
+Each entry in the GDT is structured as follows:
 
-When the requirement says, "You must declare your GDT to the BIOS", it refers to the process of informing the BIOS about the Global Descriptor Table (GDT) and allowing it to use the GDT structure. In x86 systems, the GDT holds important segment descriptors that the CPU uses to manage memory access rights, code segments, and data segments. In other words, it allows the CPU to properly manage the different segments that your kernel will use.
-Here's how this works:
+```
+Bits:      | 31........16 | 15......0  | 7.....4 | 3..0 |
+--------------------------------------------------------
+Part:      | Base (HIGH)  | Limit HIGH | Flags   | ATTR |
+--------------------------------------------------------
+Bits:      | 31........24 | 23......16 | 15......0 |
+--------------------------------------------------
+Part:      | Base (MID)   | ATTR       | Base LOW |
+--------------------------------------------------
+```
 
-    Understanding the BIOS' Role:
-        The BIOS (Basic Input/Output System) is the initial system firmware that is responsible for basic hardware initialization (keyboard, screen, etc.), and the transfer of control to a bootloader or an operating system. Once the bootloader starts the kernel, it may rely on the BIOS or the bootloader to set up some important system structures like the GDT.
+#### **b. How GDT Entries are Set**
+Each descriptor is stored as a `dq` (8-byte entry) in `boot.asm`:
 
-    Declaring GDT to BIOS:
-        The BIOS itself doesn't "declare" the GDT. What actually happens is that your kernel needs to set up the GDT and inform the CPU about it so that it can start using the segments defined in the GDT.
-        The BIOS allows the bootloader or kernel to set up the GDT using a special CPU instruction lgdt (Load Global Descriptor Table). This tells the CPU to load the GDT pointer, which points to the actual GDT structure that your kernel has set up.
-        So when you "declare" the GDT to the BIOS, you're preparing the GDT and telling the CPU to use it for segmenting memory.
-
-How did I implement this?
-
-    Creating the GDT:
-        In the code, I defined the GDT with segment descriptors for different segments that the kernel will use: kernel code, kernel data, user code, user data, and user stack.
-
-section .gdt
-global gdt_start
+```assembly
 gdt_start:
-dq 0x0000000000000000  ; Null descriptor (required as a placeholder for the 0th entry)
-dq 0x00CF9A000000FFFF  ; Kernel code segment
-dq 0x00CF92000000FFFF  ; Kernel data segment
-dq 0x00CFFA000000FFFF  ; User code segment
-dq 0x00CFF2000000FFFF  ; User data segment
-dq 0x0000000000000000  ; User stack (empty placeholder)
+    dq 0x0000000000000000  ; Null descriptor
 
-These descriptors define the segment's base, limit, and access rights. The access rights in these descriptors are defined in the hexadecimal values and control permissions for the segment.
+    ; Kernel Code Segment (Base=0, Limit=4GB, Executable, Privilege=0)
+    dq 0x00CF9A000000FFFF
 
-Loading the GDT:
+    ; Kernel Data Segment (Base=0, Limit=4GB, Read/Write, Privilege=0)
+    dq 0x00CF92000000FFFF
 
-    In the boot assembly code, I used the lgdt instruction to load the pointer to the GDT into the CPU's GDTR register.
+    ; User Code Segment (Base=0, Limit=4GB, Executable, Privilege=3)
+    dq 0x00CFFA000000FFFF
 
-global gdt_flush
-gdt_flush:
-lgdt [gdt_ptr]        ; Load the GDT pointer into the GDTR register
-mov ax, 0x10          ; Load the kernel code segment (selector)
-mov ds, ax            ; Set the data segments
+    ; User Data Segment (Base=0, Limit=4GB, Read/Write, Privilege=3)
+    dq 0x00CFF2000000FFFF
+
+    ; User Stack Segment (Base=0, Limit=4GB, Read/Write, Privilege=3)
+    dq 0x00CFF4000000FFFF
+```
+
+### **c. GDT Pointer (gdt_ptr)**
+The CPU needs to know where the GDT is in memory. The **GDT pointer** is stored in memory at `gdt_ptr`:
+
+```assembly
+gdt_ptr:
+    dw 0x2F         ; GDT size (6 entries * 8 bytes each - 1 = 47 bytes = 0x2F)
+    dd 0x00000800   ; Base address of the GDT (0x800)
+```
+This tells the CPU:
+- The GDT is **47 bytes** long.
+- The GDT is stored at **address `0x800`**.
+
+---
+
+## **3. How is the GDT Loaded into the CPU?**
+To make the CPU use the new GDT, the **LGDT (Load GDT) instruction** is used in `boot.asm`:
+
+```assembly
+lgdt [gdt_ptr]  ; Load the new GDT from gdt_ptr
+```
+
+Once the GDT is loaded, the segment registers **(CS, DS, SS, etc.)** need to be updated.
+
+```assembly
+mov ax, 0x10    ; Load Kernel Data Segment (Selector 0x10)
+mov ds, ax
 mov es, ax
 mov fs, ax
 mov gs, ax
-mov ss, ax            ; Set the stack segment
-ret
+mov ss, ax
+```
 
-Here:
+The `CS` (Code Segment) register is updated via a **far jump**:
+```assembly
+jmp 0x08:.reload_cs
+.reload_cs:
+```
+This tells the CPU:
+- **`0x08`** is the **Kernel Code Segment Selector**.
+- It reloads CS to execute code in the new memory model.
 
-    lgdt is the CPU instruction that loads the GDT pointer. This tells the CPU where to find the GDT.
-    The gdt_ptr points to the GDT structure that we have set up. The gdt_flush function essentially updates the CPU's internal registers to use the segments defined in the GDT.
-    We also load the kernel's code and data segments by setting the ds, es, fs, gs, and ss registers.
+---
 
-Making GDT available for BIOS:
+## **4. How the Stack Works**
+### **a. Stack Initialization**
+In the kernel, the stack is set up like this:
 
-    While the BIOS itself doesn't load or "declare" the GDT (this happens after the BIOS hands control over to the bootloader/kernel), your kernel must declare the GDT to the CPU in the early stages of the kernel initialization (just after the bootloader loads the kernel).
-    The BIOS/bootloader transition from protected mode to real mode, and then to protected mode again in a typical boot process. This is where the GDT comes into play, and the kernel must load it for proper memory segmentation.
+```assembly
+mov esp, stack_top  ; Set stack pointer to stack top
+```
 
-Setting the GDT Pointer:
+- **ESP (Stack Pointer)**: Points to the **top of the stack**.
+- The stack grows **downward** in memory.
+- `stack_top` is reserved in the `.bss` section with 4096 bytes:
 
-    I used a special pointer structure (gdt_ptr) to hold the size of the GDT and the address of the GDT itself. This pointer is required for the lgdt instruction.
+```assembly
+section .bss
+align 16
+resb 4096
+stack_top:
+```
 
-    gdt_ptr:
-        dw 0x001F           ; GDT limit (size of the GDT - 1)
-        dd gdt_start        ; Address of the GDT
+This means the stack starts **at the top** and moves downward as data is pushed.
 
-    The gdt_ptr points to the GDT's starting address (gdt_start) and specifies its size (here 0x001F is the size of the GDT).
+### **b. Using the Stack**
+Pushing and popping values:
 
-In summary:
+```assembly
+push eax  ; Save register
+pop ebx   ; Restore into another register
+```
 
-    The phrase "declare your GDT to the BIOS" is somewhat misleading, as it's not actually the BIOS that uses the GDT, but the CPU. The kernel must set up the GDT early on and load it into the CPU's GDTR register using the lgdt instruction.
-    The BIOS, once it hands control over to the kernel, doesn't need to directly interact with the GDT. The GDT will be used by the CPU to handle memory access rights and segmentation, and the kernel must ensure that the GDT is loaded and set up correctly before any protected mode operations are performed.
+---
+
+## **5. How the RAM Works**
+### **Memory Layout**
+Your **linker script (`link.ld`)** organizes memory like this:
+
+1. **GDT Section** (`0x800`)
+2. **Kernel Code** (`0x100000` onwards)
+3. **Read-Only Data**
+4. **Data Section**
+5. **BSS Section** (Uninitialized memory)
+6. **Stack** (Top of RAM, growing downward)
+
+### **How GRUB Loads Kernel into RAM**
+- **GRUB reads an ELF binary** and loads it at **0x100000**.
+- It **initializes registers** and **executes `_start`** in `boot.asm`.
+- The **CPU jumps into protected mode**, loads the **GDT**, and sets up segments.
+
+---
+
+## **6. Linking GRUB, and Kernel**
+### **a. Bootloader (GRUB) Role**
+- GRUB is a **Multiboot-compliant bootloader**.
+- It loads a kernel from disk into **RAM at `0x100000`**.
+- It sets up a minimal environment and jumps to `_start`.
+
+### **b. How GRUB Finds Kernel**
+- The kernel has a **Multiboot header**:
+
+```assembly
+section .multiboot
+align 4
+dd 0x1BADB002            ; Magic number
+dd 0x0                   ; Flags
+dd -(0x1BADB002 + 0x0)   ; Checksum
+```
+- GRUB recognizes this and loads the kernel correctly.
+
+### **c. Transition from GRUB to Kernel**
+1. GRUB loads the kernel into RAM.
+2. It jumps to `_start` in `boot.asm`.
+3. `_start` sets up **stack**, **GDT**, and **protected mode**.
+4. Kernel execution begins at `kernel_main`.
+
